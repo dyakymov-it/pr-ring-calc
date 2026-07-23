@@ -171,7 +171,8 @@
   }
   .result::before{
     content:'';position:absolute;inset:0;
-    background:radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+    background:var(--accent);
+    opacity:.10;
     pointer-events:none;
   }
   .result .pct{
@@ -215,8 +216,8 @@
 
   .result .toast{
     position:absolute;
-    bottom:-14px; left:50%;
-    transform:translate(-50%, 100%);
+    bottom:12px; left:50%;
+    transform:translateX(-50%);
     background:var(--gold);
     color:#fff;
     font-size:12px;
@@ -225,12 +226,12 @@
     border-radius:8px;
     opacity:0;
     pointer-events:none;
-    transition:opacity .2s ease, transform .2s ease;
+    transition:opacity .2s ease;
     white-space:nowrap;
+    z-index:3;
   }
   .result .toast.show{
     opacity:1;
-    transform:translate(-50%, 130%);
   }
 
   .breakdown{
@@ -424,6 +425,19 @@
         <dd>Целевой уровень эффекта (1–5), с которым сравнивается фактический результат по правилу выше.</dd>
       </div>
     </dl>
+  </div>
+
+  <div class="card">
+    <h2>Что значит «1 из N»</h2>
+    <p class="hint" style="margin-top:0;">
+      То же число, что и процент, только наоборот: N = 1 / P. Означает, что в среднем нужно выбить примерно N колец нужной редкости и типа, чтобы один раз получить искомый эффект.
+    </p>
+    <p class="hint">
+      Зависит от тех же параметров: редкости, типа кольца, встроенный эффект это или из пула, нужного уровня и сравнения (ровно / не ниже).
+    </p>
+    <p class="hint">
+      Это не гарантия «на N-ый раз точно выпадет» — статистическое среднее, а не обещание. Реальный результат может выпасть и раньше, и позже.
+    </p>
   </div>
 
   <div class="card">
@@ -691,8 +705,7 @@ function render(){
   window.__shareText =
     `Калькулятор шанса для колец (Pocket Rogues)\n` +
     `${rarity.name} · ${ring.name} · ${state.target==='builtin'?'встроенный эффект':'эффект из пула'}, уровень ${state.cmp==='eq'?'=':'≥'} ${state.level}\n` +
-    `Шанс: ${fmtPct(finalProb)} (${document.getElementById('oddsOut').textContent})\n` +
-    `https://dyakymov-it.github.io/pr-ring-calc/`;
+    `Шанс: ${fmtPct(finalProb)} (${document.getElementById('oddsOut').textContent})`;
 
   document.getElementById('breakdownOut').innerHTML =
     `P(эффект есть)&nbsp; <span class="op">=</span> <span class="num">${fmtPct(presenceProb)}</span>${extraNote?('<span class="op">'+extraNote+'</span>'):''}<br>` +
@@ -789,19 +802,24 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('downloadBtn').addEventListener('click', async ()=>{
-  const btn = document.getElementById('downloadBtn');
   const actions = document.querySelector('.result-actions');
   actions.style.visibility = 'hidden'; // не хотим кнопки на самом фото
   try{
+    if(document.fonts && document.fonts.ready){ await document.fonts.ready; }
     const canvas = await html2canvas(document.getElementById('resultCard'), {
-      backgroundColor: null,
+      backgroundColor: '#112a3f',
       scale: 2,
+      useCORS: true,
+      logging: false,
     });
     const link = document.createElement('a');
     link.download = 'ring-calc-result.png';
     link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
     link.click();
+    link.remove();
   }catch(e){
+    console.error('html2canvas error:', e);
     showToast('Не удалось сохранить фото');
   } finally {
     actions.style.visibility = 'visible';
